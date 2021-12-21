@@ -98,9 +98,19 @@ static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions
 };
 
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
     {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+
+/* 
+so we have a rectangle (ABCD) and it consists of 2 traingles
+indices are what define those 2 triangles for example triangle-1 is ABC and triangle-2 is CDA
+this is exactly what we are doing down here
+*/
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
 };
 
 class HelloTriangleApplication {
@@ -132,22 +142,26 @@ private:
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
-    VkPipelineLayout pipelineLayout;
     VkRenderPass renderPass;
+    VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
 
     VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-    VkDeviceMemory vertexBufferMemory;
 
     VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+
+    std::vector<VkCommandBuffer> commandBuffers;
+
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     std::vector<VkFence> imagesInFlight;
+    size_t currentFrame = 0;
 
     bool framebufferResized = false;
-    size_t currentFrame = 0;
 
     void initWindow() {
         glfwInit();
@@ -175,6 +189,7 @@ private:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
         createCommandBuffers();
         createSyncObjects(); 
     }
@@ -227,7 +242,10 @@ private:
 
     void cleanup() {
         cleanupSwapChain();
-        
+       
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        vkFreeMemory(device, indexBufferMemory, nullptr);
+
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
 
@@ -1000,6 +1018,26 @@ private:
         throw std::runtime_error("failed to find suitable memory type!");
     }
 
+    void createIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+            memcpy(data, indices.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
     void createCommandBuffers() {
         commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -1038,9 +1076,11 @@ private:
 
                 VkBuffer vertexBuffers[] = {vertexBuffer};
                 VkDeviceSize offsets[] = {0};
+                
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-                vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+                vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
             vkCmdEndRenderPass(commandBuffers[i]);
 
