@@ -2,12 +2,13 @@ CFLAGS = -std=c++17 -O2
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 SHADERS_DIR = shaders
 
-compile: main.cpp
+App: shader
+	g++ $(CFLAGS) -o VulkanApp main.cpp $(LDFLAGS)
 
-run: main.cpp
+run: App 
 	./VulkanApp
 
-main.cpp: shader
+no-shader:
 	g++ $(CFLAGS) -o VulkanApp main.cpp $(LDFLAGS)
 
 shader: $(SHADERS_DIR)/shader.*
@@ -15,4 +16,4 @@ shader: $(SHADERS_DIR)/shader.*
 	glslc $(SHADERS_DIR)/shader.frag -o $(SHADERS_DIR)/frag.spv
 	
 clean:
-	rm -f VulkanApp
+	rm -f VulkanApp shaders/*.spv
