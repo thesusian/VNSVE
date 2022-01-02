@@ -5,6 +5,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -22,7 +25,7 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string ShadersDir = "src/Shaders";
+const std::string ShadersDir = "shaders";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 

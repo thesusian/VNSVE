@@ -1,9 +1,10 @@
-CFLAGS = -std=c++17 -O2
 CC = g++
+LIBS_DIR = ./libs
+CFLAGS = -std=c++17 -I$(LIBS_DIR)/stb
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
-SHADERS_DIR = src/Shaders
 SOURCES=$(wildcard src/*.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
+SHADERS_DIR = shaders
 
 App: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o VulkanApp $(LDFLAGS)
