@@ -15,7 +15,7 @@ $(OBJECTS): src/%.o : src/%.cpp
 run: App 
 	./VulkanApp
 
-shaders: $(SHADERS_DIR)/shader.*
+shader: $(SHADERS_DIR)/shader.*
 	glslc $(SHADERS_DIR)/shader.vert -o $(SHADERS_DIR)/vert.spv
 	glslc $(SHADERS_DIR)/shader.frag -o $(SHADERS_DIR)/frag.spv
 	
