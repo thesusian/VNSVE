@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../libs/stb/stb_image.h"
 
 #include <iostream>
 #include <fstream>
@@ -1212,6 +1212,8 @@ private:
         );
 
         endSingleTimeCommands(commandBuffer);
+
+        UNUSED(format);
     }
 
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
