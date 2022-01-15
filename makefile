@@ -1,6 +1,6 @@
 CC = g++
 LIBS_DIR = ./libs
-CFLAGS = -std=c++17 -I$(LIBS_DIR)/stb
+CFLAGS = -std=c++17 -O2 -I$(LIBS_DIR)
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 SOURCES=$(wildcard src/*.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
