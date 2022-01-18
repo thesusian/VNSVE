@@ -13,7 +13,7 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../libs/tiny_obj_loader.h"
-// didn't use just #include "file.h" because YCM is giving errors, works fine tho
+// didn't use just #include "something.h" because YCM is giving errors, works fine tho
 
 #include <iostream>
 #include <fstream>
@@ -30,8 +30,7 @@
 
 #define UNUSED(x) (void)(x)
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+#include "VeWindow.hpp"
 
 const std::string SHADERS_DIR = "shaders";
 
@@ -51,13 +50,12 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-#define NDEBUG
-
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
+
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -145,17 +143,20 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
-class HelloTriangleApplication {
+namespace ve {
+class VulkanEngine {
 public:
     void run() {
-        initWindow();
         initVulkan();
         mainLoop();
         cleanup();
     }
 
+    static constexpr uint32_t WIDTH = 800;
+    static constexpr uint32_t HEIGHT = 600;
+
 private:
-    GLFWwindow* window;
+    VeWindow veWindow{WIDTH, HEIGHT, "Vulkan App"};
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -217,22 +218,7 @@ private:
     std::vector<VkFence> imagesInFlight;
     size_t currentFrame = 0;
 
-    bool framebufferResized = false;
-
-    void initWindow() {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-        glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-    }
-
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
-        app->framebufferResized = true;
-        UNUSED(width);
-        UNUSED(height);
-    }
+    
 
     void initVulkan() {
         createInstance();
@@ -296,11 +282,8 @@ private:
     }
 
     void recreateSwapChain() {
-        int width = 0, height = 0;
-        while (width == 0 || height == 0) {
-            glfwGetFramebufferSize(window, &width, &height);
-            glfwWaitEvents();
-        }
+        
+        veWindow.handleMinimization();
 
         vkDeviceWaitIdle(device);
 
@@ -320,10 +303,12 @@ private:
     }
 
     void mainLoop() {
+        
+        std::cout << "got to main loop" << std::endl;
         int frames = 0;
         int currentSec = 0;
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!veWindow.shouldClose()) {
             glfwPollEvents();
             drawFrame();
             frames++;
@@ -372,8 +357,8 @@ private:
         
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
-        glfwDestroyWindow(window);
-        glfwTerminate();
+
+        veWindow.~VeWindow();
     }
 
     void drawFrame() {
@@ -432,8 +417,8 @@ private:
 
         result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
-            framebufferResized = false;
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || veWindow.wasWindowResized()) {
+            veWindow.resetWindowResized();
             recreateSwapChain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
@@ -502,8 +487,9 @@ private:
     //START DebugMessenger funcs
     void setupDebugMessenger() {
         if (!enableValidationLayers) return;
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo);
+            VkDebugUtilsMessengerCreateInfoEXT createInfo;
+            populateDebugMessengerCreateInfo(createInfo);
+
         if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             throw std::runtime_error("failed to set up debug messenger!");
         }
@@ -519,9 +505,7 @@ private:
     //END DebugMessenger funcs
 
     void createSurface() {
-        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
-        }
+        veWindow.createSurface(instance, &surface);
     }
 
     //START CheckValidationLayersSupport funcs
@@ -557,9 +541,14 @@ private:
     }
     
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-        //std::cerr << "messageSeverity/messageType/pUserData: " << messageSeverity << " " << messageType << " " << pUserData << std::endl;
-        UNUSED(messageSeverity); UNUSED(messageType); UNUSED(pUserData);
+        if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+            //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        } else { 
+            std::cerr << "\nvalidation layer: " << pCallbackData->pMessage << std::endl;
+            std::cerr << "Severity: " << messageSeverity << " Type: " << messageType << "\n"; 
+        }
+        
+        UNUSED(pUserData);
         return VK_FALSE;
     }
     //End CheckValidationLayersSupport funcs
@@ -760,7 +749,7 @@ private:
             return capabilities.currentExtent;
         } else {
             int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            veWindow.getFramebufferSize(&width, &height);
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
@@ -1305,11 +1294,11 @@ private:
 
         VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
         if (counts & VK_SAMPLE_COUNT_64_BIT) { std::cout<<"Multisampling using 64 samples\n"; return VK_SAMPLE_COUNT_64_BIT; }
-        if (counts & VK_SAMPLE_COUNT_32_BIT) { std::cout<<"32 samples\n"; return VK_SAMPLE_COUNT_32_BIT; }
-        if (counts & VK_SAMPLE_COUNT_16_BIT) { std::cout<<"16 samples\n"; return VK_SAMPLE_COUNT_16_BIT; }
-        if (counts & VK_SAMPLE_COUNT_8_BIT) { std::cout<<"8 samples\n"; return VK_SAMPLE_COUNT_8_BIT; }
-        if (counts & VK_SAMPLE_COUNT_4_BIT) { std::cout<<"4 samples\n"; return VK_SAMPLE_COUNT_4_BIT; }
-        if (counts & VK_SAMPLE_COUNT_2_BIT) { std::cout<<"2 samples\n"; return VK_SAMPLE_COUNT_2_BIT; }
+        if (counts & VK_SAMPLE_COUNT_32_BIT) { std::cout<<"Multisampling using 32 samples\n"; return VK_SAMPLE_COUNT_32_BIT; }
+        if (counts & VK_SAMPLE_COUNT_16_BIT) { std::cout<<"Multisampling using 16 samples\n"; return VK_SAMPLE_COUNT_16_BIT; }
+        if (counts & VK_SAMPLE_COUNT_8_BIT) { std::cout<<"Multisampling using 8 samples\n"; return VK_SAMPLE_COUNT_8_BIT; }
+        if (counts & VK_SAMPLE_COUNT_4_BIT) { std::cout<<"Multisampling using 4 samples\n"; return VK_SAMPLE_COUNT_4_BIT; }
+        if (counts & VK_SAMPLE_COUNT_2_BIT) { std::cout<<"Multisampling using 2 samples\n"; return VK_SAMPLE_COUNT_2_BIT; }
 
         return VK_SAMPLE_COUNT_64_BIT;
     }
@@ -1768,9 +1757,10 @@ private:
         }
     }
 };
+} // end namespace ve
 
 int main() {
-    HelloTriangleApplication app;
+    ve::VulkanEngine app;
 
     try {
         app.run();

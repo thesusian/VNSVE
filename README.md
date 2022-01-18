@@ -30,3 +30,8 @@
   make
   ```
   then ```make run``` or ```./VulkanApp``` to run
+
+### Thanks To These tutorials
+[**Vulkan-Tutorial.com**](https://vulkan-tutorial.com/)
+[**Brendan Galea's Youtube Tutorial**](https://www.youtube.com/playlist?list=PL8327DO66nu9qYVKLDmdLW_84-yE4auCR)
+
