@@ -4,24 +4,11 @@
 ****
 
 ### Requirements
-  * apt
-    * ```vulkan-tools```
-    * ```libvulkan-dev```
-    * ```vulkan-validationlayers-dev```
-    * ```spirv-tools```
-    * ```libglfw3-dev```
-    * ```libglm-dev```
-  * dnf
-    * ```vulkan-tools```
-    * ```vulkan-loader-devel```
-    * ```spirv-tools```
-    * ```vulkan-validation-layers-devel```
-    * ```glfw-devel```
-    * ```glm-devel```
-  * pacman
-    * ```vulkan-devel``` package group
-    * ```glfw-x11``` or ```glfw-wayland```
-    * ```glm```
+  * apt: ```vulkan-tools ibvulkan-dev vulkan-validationlayers-dev spirv-tools libglfw3-dev libglm-dev```
+
+  * dnf: ```vulkan-tools vulkan-loader-devel spirv-tools vulkan-validation-layers-devel glfw-devel glm-devel```
+
+  * pacman: ```vulkan-devel glm``` ```glfw-x11``` or ```glfw-wayland```
 
 ### Building
   ```bash
@@ -30,8 +17,10 @@
   make
   ```
   then ```make run``` or ```./VulkanApp``` to run
+ 
+****
 
 ### Thanks To These tutorials
-[**Vulkan-Tutorial.com**](https://vulkan-tutorial.com/)
-[**Brendan Galea's Youtube Tutorial**](https://www.youtube.com/playlist?list=PL8327DO66nu9qYVKLDmdLW_84-yE4auCR)
+* [Vulkan-Tutorial.com](https://vulkan-tutorial.com/)
+* [Brendan Galea's Youtube Tutorial](https://www.youtube.com/playlist?list=PL8327DO66nu9qYVKLDmdLW_84-yE4auCR)
 
