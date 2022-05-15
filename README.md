@@ -1,6 +1,8 @@
 # VNSVE
 **a Very Nice Small Vulkan Engine**
 
+note that this is still a work in progress
+
 ****
 
 ### Requirements
